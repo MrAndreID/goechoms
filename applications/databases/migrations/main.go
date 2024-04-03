@@ -30,11 +30,20 @@ func main() {
 		return
 	}
 
+	if !cfg.UseDatabase {
+		logrus.WithFields(logrus.Fields{
+			"tag":   tag + "02",
+			"error": "The Database is not yet used",
+		}).Error("failed to migrate")
+
+		return
+	}
+
 	app, err := applications.New(cfg)
 
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
-			"tag":   tag + "02",
+			"tag":   tag + "03",
 			"error": err.Error(),
 		}).Error("failed to initiate application")
 
@@ -54,7 +63,7 @@ func main() {
 
 		if err != nil {
 			logrus.WithFields(logrus.Fields{
-				"tag":   tag + "03",
+				"tag":   tag + "04",
 				"error": err.Error(),
 			}).Error("failed to get tables from database")
 
@@ -68,7 +77,7 @@ func main() {
 
 			if err != nil {
 				logrus.WithFields(logrus.Fields{
-					"tag":   tag + "04",
+					"tag":   tag + "05",
 					"error": err.Error(),
 				}).Error("failed to drop table")
 
@@ -85,7 +94,7 @@ func main() {
 
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
-			"tag":   tag + "05",
+			"tag":   tag + "06",
 			"error": err.Error(),
 		}).Error("failed to migrate")
 
