@@ -50,8 +50,6 @@ func main() {
 		return
 	}
 
-	fmt.Println("Start Migration")
-
 	migrateFlag := flag.String("migrate", "default", "For Migrate")
 
 	flag.Parse()
@@ -89,6 +87,10 @@ func main() {
 
 		fmt.Println("End Drop All Tables")
 	}
+
+	fmt.Println()
+
+	fmt.Println("Start Migration")
 
 	err = Migrate(app)
 
