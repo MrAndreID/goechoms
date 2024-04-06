@@ -13,7 +13,8 @@ import (
 )
 
 var tables map[string]interface{} = map[string]interface{}{
-	"users": &models.User{},
+	"users":  &models.User{},
+	"emails": &models.Email{},
 }
 
 func main() {

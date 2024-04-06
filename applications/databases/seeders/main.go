@@ -14,13 +14,33 @@ import (
 )
 
 var seeder map[string]map[string]interface{} = map[string]map[string]interface{}{
-	"users": {
+	"user1": {
 		"model": &models.User{},
 		"data": &models.User{
 			ID:        "aaaaaaaa-1111-aaaa-1111-aaaaaaaaaaaa",
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 			Name:      "Andrea Adam",
+		},
+	},
+	"email1": {
+		"model": &models.Email{},
+		"data": &models.Email{
+			ID:        "aaaaaaaa-1111-aaaa-1111-aaaaaaaaaaaa",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			UserID:    "aaaaaaaa-1111-aaaa-1111-aaaaaaaaaaaa",
+			Email:     "mrandreid@email.com",
+		},
+	},
+	"email2": {
+		"model": &models.Email{},
+		"data": &models.Email{
+			ID:        "bbbbbbbb-2222-bbbb-2222-bbbbbbbbbbbb",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			UserID:    "aaaaaaaa-1111-aaaa-1111-aaaaaaaaaaaa",
+			Email:     "mrandreid@email.co.id",
 		},
 	},
 }
