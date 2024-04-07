@@ -60,10 +60,12 @@ func (uh *UserHandler) Index(c echo.Context) error {
 		})
 	}
 
-	countTotal := uh.Application.Database.Table("users")
-	queryBuilder := uh.Application.Database.Table("users")
+	countTotal := uh.Application.Database.Model(&models.User{})
+	queryBuilder := uh.Application.Database.Model(&models.User{}).Preload("Emails")
 
 	if request.ID != "" {
+		countTotal.Where("id = ?", request.ID)
+
 		queryBuilder.Where("id = ?", request.ID)
 	}
 
