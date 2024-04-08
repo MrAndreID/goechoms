@@ -123,7 +123,9 @@ func (uh *UserHandler) Create(c echo.Context) error {
 		})
 	}
 
-	UUID, err := uuid.NewRandom()
+	tx := uh.Application.Database.Begin()
+
+	userUUID, err := uuid.NewRandom()
 
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -137,18 +139,18 @@ func (uh *UserHandler) Create(c echo.Context) error {
 		})
 	}
 
-	user.ID = UUID.String()
-	user.Name = request.Name
+	user.ID = userUUID.String()
 	user.CreatedAt = time.Now().In(uh.Application.TimeLocation)
 	user.UpdatedAt = time.Now().In(uh.Application.TimeLocation)
+	user.Name = request.Name
 
-	createUser := uh.Application.Database.Save(&user)
+	createUser := tx.Save(&user)
 
 	if createUser.Error != nil {
 		logrus.WithFields(logrus.Fields{
 			"tag":   tag + "03",
 			"error": createUser.Error.Error(),
-		}).Error("failed to create post")
+		}).Error("failed to create user")
 
 		return c.JSON(http.StatusInternalServerError, types.MainResponse{
 			Code:        fmt.Sprintf("%04d", http.StatusInternalServerError),
@@ -159,14 +161,74 @@ func (uh *UserHandler) Create(c echo.Context) error {
 	if createUser.RowsAffected == 0 {
 		logrus.WithFields(logrus.Fields{
 			"tag":   tag + "04",
-			"error": "Failed to Create Post",
-		}).Error("failed to create post")
+			"error": "Failed to Create User",
+		}).Error("failed to create user")
 
 		return c.JSON(http.StatusInternalServerError, types.MainResponse{
 			Code:        fmt.Sprintf("%04d", http.StatusInternalServerError),
 			Description: strings.ToUpper(strings.ReplaceAll(http.StatusText(http.StatusInternalServerError), " ", "_")),
 		})
 	}
+
+	for _, v := range request.Emails {
+		var email models.Email
+
+		emailUUID, err := uuid.NewRandom()
+
+		if err != nil {
+			logrus.WithFields(logrus.Fields{
+				"tag":   tag + "05",
+				"error": err.Error(),
+			}).Error("failed to generate uuid")
+
+			tx.Rollback()
+
+			return c.JSON(http.StatusInternalServerError, types.MainResponse{
+				Code:        fmt.Sprintf("%04d", http.StatusInternalServerError),
+				Description: strings.ToUpper(strings.ReplaceAll(http.StatusText(http.StatusInternalServerError), " ", "_")),
+			})
+		}
+
+		email.ID = emailUUID.String()
+		email.CreatedAt = time.Now().In(uh.Application.TimeLocation)
+		email.UpdatedAt = time.Now().In(uh.Application.TimeLocation)
+		email.UserID = user.ID
+		email.Email = v.Email
+
+		createEmail := tx.Save(&email)
+
+		if createEmail.Error != nil {
+			logrus.WithFields(logrus.Fields{
+				"tag":   tag + "06",
+				"error": createEmail.Error.Error(),
+			}).Error("failed to create email")
+
+			tx.Rollback()
+
+			return c.JSON(http.StatusInternalServerError, types.MainResponse{
+				Code:        fmt.Sprintf("%04d", http.StatusInternalServerError),
+				Description: strings.ToUpper(strings.ReplaceAll(http.StatusText(http.StatusInternalServerError), " ", "_")),
+			})
+		}
+
+		if createEmail.RowsAffected == 0 {
+			logrus.WithFields(logrus.Fields{
+				"tag":   tag + "07",
+				"error": "Failed to Create Email",
+			}).Error("failed to create email")
+
+			tx.Rollback()
+
+			return c.JSON(http.StatusInternalServerError, types.MainResponse{
+				Code:        fmt.Sprintf("%04d", http.StatusInternalServerError),
+				Description: strings.ToUpper(strings.ReplaceAll(http.StatusText(http.StatusInternalServerError), " ", "_")),
+			})
+		}
+
+		user.Emails = append(user.Emails, email)
+	}
+
+	tx.Commit()
 
 	return c.JSON(http.StatusCreated, types.MainResponse{
 		Code:        fmt.Sprintf("%04d", http.StatusCreated),

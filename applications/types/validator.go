@@ -68,6 +68,13 @@ func (r GetUserRequest) Validate() interface{} {
 func (r CreateUserRequest) Validate() interface{} {
 	return validation.ValidateStruct(&r,
 		validation.Field(&r.Name, validation.Required, validation.By(BlacklistValidation("name"))),
+		validation.Field(&r.Emails, validation.Required),
+	)
+}
+
+func (r CreateEmailRequest) Validate() interface{} {
+	return validation.ValidateStruct(&r,
+		validation.Field(&r.Email, validation.Required, is.Email, validation.By(BlacklistValidation("email"))),
 	)
 }
 
