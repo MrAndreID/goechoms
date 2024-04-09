@@ -133,6 +133,8 @@ func (uh *UserHandler) Create(c echo.Context) error {
 			"error": err.Error(),
 		}).Error("failed to generate uuid")
 
+		tx.Rollback()
+
 		return c.JSON(http.StatusInternalServerError, types.MainResponse{
 			Code:        fmt.Sprintf("%04d", http.StatusInternalServerError),
 			Description: strings.ToUpper(strings.ReplaceAll(http.StatusText(http.StatusInternalServerError), " ", "_")),
@@ -152,6 +154,8 @@ func (uh *UserHandler) Create(c echo.Context) error {
 			"error": createUser.Error.Error(),
 		}).Error("failed to create user")
 
+		tx.Rollback()
+
 		return c.JSON(http.StatusInternalServerError, types.MainResponse{
 			Code:        fmt.Sprintf("%04d", http.StatusInternalServerError),
 			Description: strings.ToUpper(strings.ReplaceAll(http.StatusText(http.StatusInternalServerError), " ", "_")),
@@ -163,6 +167,8 @@ func (uh *UserHandler) Create(c echo.Context) error {
 			"tag":   tag + "04",
 			"error": "Failed to Create User",
 		}).Error("failed to create user")
+
+		tx.Rollback()
 
 		return c.JSON(http.StatusInternalServerError, types.MainResponse{
 			Code:        fmt.Sprintf("%04d", http.StatusInternalServerError),
