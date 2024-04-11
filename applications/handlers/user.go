@@ -263,13 +263,17 @@ func (uh *UserHandler) Edit(c echo.Context) error {
 		})
 	}
 
-	userResult := uh.Application.Database.First(&user, "id = ?", request.ID)
+	tx := uh.Application.Database.Begin()
+
+	userResult := tx.First(&user, "id = ?", request.ID)
 
 	if userResult.RowsAffected == 0 {
 		logrus.WithFields(logrus.Fields{
 			"tag":   tag + "02",
 			"error": "Failed to Get User Data",
 		}).Error("failed to get user data")
+
+		tx.Rollback()
 
 		return c.JSON(http.StatusNotFound, types.MainResponse{
 			Code:        fmt.Sprintf("%04d", http.StatusNotFound),
@@ -281,15 +285,127 @@ func (uh *UserHandler) Edit(c echo.Context) error {
 		user.Name = request.Name
 	}
 
+	if len(request.Emails) > 0 {
+		deleteEmail := tx.Where("user_id = ?", user.ID).Delete(&models.Email{})
+
+		if deleteEmail.Error != nil {
+			logrus.WithFields(logrus.Fields{
+				"tag":   tag + "03",
+				"error": deleteEmail.Error.Error(),
+			}).Error("failed to delete email data")
+
+			tx.Rollback()
+
+			return c.JSON(http.StatusInternalServerError, types.MainResponse{
+				Code:        fmt.Sprintf("%04d", http.StatusInternalServerError),
+				Description: strings.ToUpper(strings.ReplaceAll(http.StatusText(http.StatusInternalServerError), " ", "_")),
+			})
+		}
+
+		if deleteEmail.RowsAffected == 0 {
+			logrus.WithFields(logrus.Fields{
+				"tag":   tag + "04",
+				"error": "Failed to Delete Email Data",
+			}).Error("failed to delete email data")
+
+			tx.Rollback()
+
+			return c.JSON(http.StatusInternalServerError, types.MainResponse{
+				Code:        fmt.Sprintf("%04d", http.StatusInternalServerError),
+				Description: strings.ToUpper(strings.ReplaceAll(http.StatusText(http.StatusInternalServerError), " ", "_")),
+			})
+		}
+
+		for _, v := range request.Emails {
+			var email models.Email
+
+			emailUUID, err := uuid.NewRandom()
+
+			if err != nil {
+				logrus.WithFields(logrus.Fields{
+					"tag":   tag + "05",
+					"error": err.Error(),
+				}).Error("failed to generate uuid")
+
+				tx.Rollback()
+
+				return c.JSON(http.StatusInternalServerError, types.MainResponse{
+					Code:        fmt.Sprintf("%04d", http.StatusInternalServerError),
+					Description: strings.ToUpper(strings.ReplaceAll(http.StatusText(http.StatusInternalServerError), " ", "_")),
+				})
+			}
+
+			email.ID = emailUUID.String()
+			email.CreatedAt = time.Now().In(uh.Application.TimeLocation)
+			email.UpdatedAt = time.Now().In(uh.Application.TimeLocation)
+			email.UserID = user.ID
+			email.Email = v.Email
+
+			createEmail := tx.Save(&email)
+
+			if createEmail.Error != nil {
+				logrus.WithFields(logrus.Fields{
+					"tag":   tag + "06",
+					"error": createEmail.Error.Error(),
+				}).Error("failed to create email")
+
+				tx.Rollback()
+
+				return c.JSON(http.StatusInternalServerError, types.MainResponse{
+					Code:        fmt.Sprintf("%04d", http.StatusInternalServerError),
+					Description: strings.ToUpper(strings.ReplaceAll(http.StatusText(http.StatusInternalServerError), " ", "_")),
+				})
+			}
+
+			if createEmail.RowsAffected == 0 {
+				logrus.WithFields(logrus.Fields{
+					"tag":   tag + "07",
+					"error": "Failed to Create Email",
+				}).Error("failed to create email")
+
+				tx.Rollback()
+
+				return c.JSON(http.StatusInternalServerError, types.MainResponse{
+					Code:        fmt.Sprintf("%04d", http.StatusInternalServerError),
+					Description: strings.ToUpper(strings.ReplaceAll(http.StatusText(http.StatusInternalServerError), " ", "_")),
+				})
+			}
+
+			user.Emails = append(user.Emails, email)
+		}
+	} else {
+		var emails []models.Email
+
+		emailResult := tx.Find(&emails, "user_id = ?", user.ID)
+
+		if emailResult.RowsAffected == 0 {
+			logrus.WithFields(logrus.Fields{
+				"tag":   tag + "08",
+				"error": "Failed to Get Email Data",
+			}).Error("failed to get email data")
+
+			tx.Rollback()
+
+			return c.JSON(http.StatusNotFound, types.MainResponse{
+				Code:        fmt.Sprintf("%04d", http.StatusNotFound),
+				Description: strings.ToUpper(strings.ReplaceAll(http.StatusText(http.StatusNotFound), " ", "_")),
+			})
+		}
+
+		user.Emails = emails
+	}
+
 	user.UpdatedAt = time.Now().In(uh.Application.TimeLocation)
 
-	editUser := uh.Application.Database.Save(&user)
+	editUser := tx.Save(&user)
 
 	if editUser.Error != nil {
 		logrus.WithFields(logrus.Fields{
-			"tag":   tag + "03",
+			"tag":   tag + "09",
 			"error": editUser.Error.Error(),
-		}).Error("failed to update user data")
+		}).Error("failed to edit user data")
+
+		tx.Rollback()
 
 		return c.JSON(http.StatusInternalServerError, types.MainResponse{
 			Code:        fmt.Sprintf("%04d", http.StatusInternalServerError),
@@ -299,15 +415,19 @@ func (uh *UserHandler) Edit(c echo.Context) error {
 
 	if editUser.RowsAffected == 0 {
 		logrus.WithFields(logrus.Fields{
-			"tag":   tag + "04",
-			"error": "Failed to Update User Data",
-		}).Error("failed to update user data")
+			"tag":   tag + "10",
+			"error": "Failed to Edit User Data",
+		}).Error("failed to edit user data")
+
+		tx.Rollback()
 
 		return c.JSON(http.StatusInternalServerError, types.MainResponse{
 			Code:        fmt.Sprintf("%04d", http.StatusInternalServerError),
 			Description: strings.ToUpper(strings.ReplaceAll(http.StatusText(http.StatusInternalServerError), " ", "_")),
 		})
 	}
+
+	tx.Commit()
 
 	return c.JSON(http.StatusOK, types.MainResponse{
 		Code:        fmt.Sprintf("%04d", http.StatusOK),

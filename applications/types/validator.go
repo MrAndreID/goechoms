@@ -80,8 +80,9 @@ func (r CreateEmailRequest) Validate() interface{} {
 
 func (r EditUserRequest) Validate() interface{} {
 	return validation.ValidateStruct(&r,
-		validation.Field(&r.ID, validation.Required, validation.By(BlacklistValidation("id"))),
+		validation.Field(&r.ID, validation.Required, is.UUID, validation.By(BlacklistValidation("id"))),
 		validation.Field(&r.Name, validation.By(BlacklistValidation("name"))),
+		validation.Field(&r.Emails),
 	)
 }
 

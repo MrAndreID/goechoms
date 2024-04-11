@@ -24,8 +24,9 @@ type CreateEmailRequest struct {
 }
 
 type EditUserRequest struct {
-	ID   string `param:"id" json:"id"`
-	Name string `json:"name"`
+	ID     string               `param:"id" json:"id"`
+	Name   string               `json:"name"`
+	Emails []CreateEmailRequest `json:"emails"`
 }
 
 type DeleteUserRequest struct {
