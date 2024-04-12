@@ -456,7 +456,9 @@ func (uh *UserHandler) Delete(c echo.Context) error {
 		})
 	}
 
-	userResult := uh.Application.Database.First(&user, "id = ?", request.ID)
+	tx := uh.Application.Database.Begin()
+
+	userResult := tx.First(&user, "id = ?", request.ID)
 
 	if userResult.RowsAffected == 0 {
 		logrus.WithFields(logrus.Fields{
@@ -464,19 +466,23 @@ func (uh *UserHandler) Delete(c echo.Context) error {
 			"error": "Failed To Get User Data",
 		}).Error("failed to get user data")
 
+		tx.Rollback()
+
 		return c.JSON(http.StatusNotFound, types.MainResponse{
 			Code:        fmt.Sprintf("%04d", http.StatusNotFound),
 			Description: strings.ToUpper(strings.ReplaceAll(http.StatusText(http.StatusNotFound), " ", "_")),
 		})
 	}
 
-	deleteUser := uh.Application.Database.Delete(&user, "id = ?", request.ID)
+	deleteUser := tx.Delete(&user, "id = ?", request.ID)
 
 	if deleteUser.Error != nil {
 		logrus.WithFields(logrus.Fields{
 			"tag":   tag + "03",
 			"error": deleteUser.Error.Error(),
 		}).Error("failed to delete user data")
+
+		tx.Rollback()
 
 		return c.JSON(http.StatusInternalServerError, types.MainResponse{
 			Code:        fmt.Sprintf("%04d", http.StatusInternalServerError),
@@ -490,11 +496,45 @@ func (uh *UserHandler) Delete(c echo.Context) error {
 			"error": "Failed To Delete User Data",
 		}).Error("failed to delete user data")
 
+		tx.Rollback()
+
 		return c.JSON(http.StatusInternalServerError, types.MainResponse{
 			Code:        fmt.Sprintf("%04d", http.StatusInternalServerError),
 			Description: strings.ToUpper(strings.ReplaceAll(http.StatusText(http.StatusInternalServerError), " ", "_")),
 		})
 	}
+
+	deleteEmail := tx.Where("user_id = ?", request.ID).Delete(&models.Email{})
+
+	if deleteEmail.Error != nil {
+		logrus.WithFields(logrus.Fields{
+			"tag":   tag + "05",
+			"error": deleteEmail.Error.Error(),
+		}).Error("failed to delete email data")
+
+		tx.Rollback()
+
+		return c.JSON(http.StatusInternalServerError, types.MainResponse{
+			Code:        fmt.Sprintf("%04d", http.StatusInternalServerError),
+			Description: strings.ToUpper(strings.ReplaceAll(http.StatusText(http.StatusInternalServerError), " ", "_")),
+		})
+	}
+
+	if deleteEmail.RowsAffected == 0 {
+		logrus.WithFields(logrus.Fields{
+			"tag":   tag + "06",
+			"error": "Failed To Delete Email Data",
+		}).Error("failed to delete email data")
+
+		tx.Rollback()
+
+		return c.JSON(http.StatusInternalServerError, types.MainResponse{
+			Code:        fmt.Sprintf("%04d", http.StatusInternalServerError),
+			Description: strings.ToUpper(strings.ReplaceAll(http.StatusText(http.StatusInternalServerError), " ", "_")),
+		})
+	}
+
+	tx.Commit()
 
 	return c.JSON(http.StatusOK, types.MainResponse{
 		Code:        fmt.Sprintf("%04d", http.StatusOK),

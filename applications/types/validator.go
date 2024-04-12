@@ -88,6 +88,6 @@ func (r EditUserRequest) Validate() interface{} {
 
 func (r DeleteUserRequest) Validate() interface{} {
 	return validation.ValidateStruct(&r,
-		validation.Field(&r.ID, validation.Required, validation.By(BlacklistValidation("id"))),
+		validation.Field(&r.ID, validation.Required, is.UUID, validation.By(BlacklistValidation("id"))),
 	)
 }
