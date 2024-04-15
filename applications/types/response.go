@@ -11,3 +11,10 @@ type PaginatorResponse struct {
 	Total    int64       `json:"total"`
 	NextPage bool        `json:"nextPage"`
 }
+
+type HTTPResponse struct {
+	Headers    map[string][]string
+	Body       interface{}
+	StatusCode int
+	Error      error
+}

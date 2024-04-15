@@ -135,6 +135,8 @@ func New(cfg *configs.Config, app *applications.Application) *echo.Echo {
 	userRoute.PUT("/:id", handler.User.Edit, middlewares.ServiceKeyCheck).Name = "user.edit"
 	userRoute.DELETE("/:id", handler.User.Delete, middlewares.ServiceKeyCheck).Name = "user.delete"
 
+	v1.GET("/currency", handler.Currency.Index).Name = "currency.index"
+
 	routes := e.Routes()
 
 	middlewares.RouteList = middlewares.SetRouteList(routes)

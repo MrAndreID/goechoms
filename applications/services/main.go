@@ -8,11 +8,11 @@ import (
 )
 
 type Service struct {
-	//
+	Currency *CurrencyService
 }
 
 func New(cfg *configs.Config, redisConnection *redisPackage.Client, databaseConnection *gorm.DB) *Service {
 	return &Service{
-		//
+		Currency: NewCurrencyService(cfg),
 	}
 }

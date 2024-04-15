@@ -45,6 +45,8 @@ type Config struct {
 	ServiceKey string `env:"SERVICE_KEY"`
 
 	DefaultTimeout int `env:"DEFAULT_TIMEOUT" envDefault:"1"`
+
+	CurrencyURL string `env:"CURRENCY_URL"`
 }
 
 func New() (*Config, error) {

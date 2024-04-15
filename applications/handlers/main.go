@@ -6,11 +6,13 @@ import (
 )
 
 type Handler struct {
-	User *UserHandler
+	User     *UserHandler
+	Currency *CurrencyHandler
 }
 
 func New(cfg *configs.Config, app *applications.Application) *Handler {
 	return &Handler{
-		User: NewUserHandler(cfg, app),
+		User:     NewUserHandler(cfg, app),
+		Currency: NewCurrencyHandler(cfg, app),
 	}
 }
