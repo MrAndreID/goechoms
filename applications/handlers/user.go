@@ -176,6 +176,24 @@ func (uh *UserHandler) Create(c echo.Context) error {
 		})
 	}
 
+	for i := 0; i < len(request.Emails); i++ {
+		for j := i + 1; j < len(request.Emails); j++ {
+			if request.Emails[i].Email == request.Emails[j].Email {
+				logrus.WithFields(logrus.Fields{
+					"tag":   tag + "05",
+					"error": "Duplicate Email",
+				}).Error("duplicate email")
+
+				tx.Rollback()
+
+				return c.JSON(http.StatusConflict, types.MainResponse{
+					Code:        fmt.Sprintf("%04d", http.StatusConflict),
+					Description: strings.ToUpper(strings.ReplaceAll(http.StatusText(http.StatusConflict), " ", "_")),
+				})
+			}
+		}
+	}
+
 	for _, v := range request.Emails {
 		var email models.Email
 
@@ -183,7 +201,7 @@ func (uh *UserHandler) Create(c echo.Context) error {
 
 		if err != nil {
 			logrus.WithFields(logrus.Fields{
-				"tag":   tag + "05",
+				"tag":   tag + "06",
 				"error": err.Error(),
 			}).Error("failed to generate uuid")
 
@@ -205,7 +223,7 @@ func (uh *UserHandler) Create(c echo.Context) error {
 
 		if createEmail.Error != nil {
 			logrus.WithFields(logrus.Fields{
-				"tag":   tag + "06",
+				"tag":   tag + "07",
 				"error": createEmail.Error.Error(),
 			}).Error("failed to create email")
 
@@ -219,7 +237,7 @@ func (uh *UserHandler) Create(c echo.Context) error {
 
 		if createEmail.RowsAffected == 0 {
 			logrus.WithFields(logrus.Fields{
-				"tag":   tag + "07",
+				"tag":   tag + "08",
 				"error": "Failed to Create Email",
 			}).Error("failed to create email")
 
