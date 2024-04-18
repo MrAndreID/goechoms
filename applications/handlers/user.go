@@ -304,11 +304,29 @@ func (uh *UserHandler) Edit(c echo.Context) error {
 	}
 
 	if len(request.Emails) > 0 {
+		for i := 0; i < len(request.Emails); i++ {
+			for j := i + 1; j < len(request.Emails); j++ {
+				if request.Emails[i].Email == request.Emails[j].Email {
+					logrus.WithFields(logrus.Fields{
+						"tag":   tag + "03",
+						"error": "Duplicate Email",
+					}).Error("duplicate email")
+
+					tx.Rollback()
+
+					return c.JSON(http.StatusConflict, types.MainResponse{
+						Code:        fmt.Sprintf("%04d", http.StatusConflict),
+						Description: strings.ToUpper(strings.ReplaceAll(http.StatusText(http.StatusConflict), " ", "_")),
+					})
+				}
+			}
+		}
+
 		deleteEmail := tx.Where("user_id = ?", user.ID).Delete(&models.Email{})
 
 		if deleteEmail.Error != nil {
 			logrus.WithFields(logrus.Fields{
-				"tag":   tag + "03",
+				"tag":   tag + "04",
 				"error": deleteEmail.Error.Error(),
 			}).Error("failed to delete email data")
 
@@ -322,7 +340,7 @@ func (uh *UserHandler) Edit(c echo.Context) error {
 
 		if deleteEmail.RowsAffected == 0 {
 			logrus.WithFields(logrus.Fields{
-				"tag":   tag + "04",
+				"tag":   tag + "05",
 				"error": "Failed to Delete Email Data",
 			}).Error("failed to delete email data")
 
@@ -341,7 +359,7 @@ func (uh *UserHandler) Edit(c echo.Context) error {
 
 			if err != nil {
 				logrus.WithFields(logrus.Fields{
-					"tag":   tag + "05",
+					"tag":   tag + "06",
 					"error": err.Error(),
 				}).Error("failed to generate uuid")
 
@@ -363,7 +381,7 @@ func (uh *UserHandler) Edit(c echo.Context) error {
 
 			if createEmail.Error != nil {
 				logrus.WithFields(logrus.Fields{
-					"tag":   tag + "06",
+					"tag":   tag + "07",
 					"error": createEmail.Error.Error(),
 				}).Error("failed to create email")
 
@@ -377,7 +395,7 @@ func (uh *UserHandler) Edit(c echo.Context) error {
 
 			if createEmail.RowsAffected == 0 {
 				logrus.WithFields(logrus.Fields{
-					"tag":   tag + "07",
+					"tag":   tag + "08",
 					"error": "Failed to Create Email",
 				}).Error("failed to create email")
 
@@ -398,7 +416,7 @@ func (uh *UserHandler) Edit(c echo.Context) error {
 
 		if emailResult.RowsAffected == 0 {
 			logrus.WithFields(logrus.Fields{
-				"tag":   tag + "08",
+				"tag":   tag + "09",
 				"error": "Failed to Get Email Data",
 			}).Error("failed to get email data")
 
@@ -419,7 +437,7 @@ func (uh *UserHandler) Edit(c echo.Context) error {
 
 	if editUser.Error != nil {
 		logrus.WithFields(logrus.Fields{
-			"tag":   tag + "09",
+			"tag":   tag + "10",
 			"error": editUser.Error.Error(),
 		}).Error("failed to edit user data")
 
@@ -433,7 +451,7 @@ func (uh *UserHandler) Edit(c echo.Context) error {
 
 	if editUser.RowsAffected == 0 {
 		logrus.WithFields(logrus.Fields{
-			"tag":   tag + "10",
+			"tag":   tag + "11",
 			"error": "Failed to Edit User Data",
 		}).Error("failed to edit user data")
 
