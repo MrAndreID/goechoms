@@ -24,8 +24,8 @@ func NewBodyDumpLog() error {
 	}
 
 	logfile, err := rotatelogs.New(
-		dir+"/storage/logs/%Y%m%d.log",
-		rotatelogs.WithLinkName(dir+"/storage/logs/master.log"),
+		dir+"/storages/logs/%Y%m%d.log",
+		rotatelogs.WithLinkName(dir+"/storages/logs/master.log"),
 		rotatelogs.WithRotationTime(24*time.Hour),
 		rotatelogs.WithMaxAge(-1),
 		rotatelogs.WithRotationCount(365),
