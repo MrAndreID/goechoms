@@ -10,7 +10,7 @@ import (
 )
 
 func NewBodyDumpLog() error {
-	var tag string = "Config.Log.NewBodyDumpLog."
+	var tag string = "Configs.Log.NewBodyDumpLog."
 
 	dir, err := os.Getwd()
 
