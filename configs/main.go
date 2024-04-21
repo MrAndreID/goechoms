@@ -51,7 +51,7 @@ type Config struct {
 
 func New() (*Config, error) {
 	var (
-		tag string = "Config.Main.New."
+		tag string = "Configs.Main.New."
 		cfg Config
 	)
 
