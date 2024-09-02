@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -31,6 +32,7 @@ func NewUserHandler(cfg *configs.Config, app *applications.Application) *UserHan
 func (uh *UserHandler) Index(c echo.Context) error {
 	var (
 		request   types.GetUserRequest
+		tag       string = "Applications.Handlers.User.Index."
 		paginator types.PaginatorResponse
 		user      []models.User
 		orderBy   map[string]string = map[string]string{
@@ -43,13 +45,15 @@ func (uh *UserHandler) Index(c echo.Context) error {
 			"asc":  "asc",
 			"desc": "desc",
 		}
-		search []string = []string{"name"}
-		total  int64
+		search      []string = []string{"name"}
+		page, limit int
+		err         error
+		total       int64
 	)
 
 	if err := uh.Application.BindRequest(c, &request); err != nil {
 		logrus.WithFields(logrus.Fields{
-			"tag":   "Applications.Handlers.User.Index.01",
+			"tag":   tag + "01",
 			"error": err.(*echo.HTTPError).Message,
 		}).Error("invalid request data")
 
@@ -69,6 +73,38 @@ func (uh *UserHandler) Index(c echo.Context) error {
 		queryBuilder.Where("id = ?", request.ID)
 	}
 
+	if request.Page != "" {
+		page, err = strconv.Atoi(request.Page)
+
+		if err != nil {
+			logrus.WithFields(logrus.Fields{
+				"tag":   tag + "02",
+				"error": err.Error(),
+			}).Error("failed to convert from string to int for page from request")
+
+			return c.JSON(http.StatusInternalServerError, types.MainResponse{
+				Code:        fmt.Sprintf("%04d", http.StatusInternalServerError),
+				Description: strings.ToUpper(strings.ReplaceAll(http.StatusText(http.StatusInternalServerError), " ", "_")),
+			})
+		}
+	}
+
+	if request.Limit != "" {
+		limit, err = strconv.Atoi(request.Limit)
+
+		if err != nil {
+			logrus.WithFields(logrus.Fields{
+				"tag":   tag + "03",
+				"error": err.Error(),
+			}).Error("failed to convert from string to int for limit from request")
+
+			return c.JSON(http.StatusInternalServerError, types.MainResponse{
+				Code:        fmt.Sprintf("%04d", http.StatusInternalServerError),
+				Description: strings.ToUpper(strings.ReplaceAll(http.StatusText(http.StatusInternalServerError), " ", "_")),
+			})
+		}
+	}
+
 	uh.Application.DataTable(
 		c.Request().Context(),
 		queryBuilder,
@@ -76,9 +112,9 @@ func (uh *UserHandler) Index(c echo.Context) error {
 		orderBy[request.OrderBy],
 		sortBy[request.SortBy],
 		orderBy["id"],
-		"asc",
-		request.Page,
-		&request.Limit,
+		sortBy["asc"],
+		page,
+		&limit,
 		request.Search,
 		false,
 	)
@@ -89,7 +125,7 @@ func (uh *UserHandler) Index(c echo.Context) error {
 		countTotal.Count(&total)
 	}
 
-	if len(user) >= request.Limit {
+	if len(user) >= limit {
 		paginator.NextPage = true
 	}
 
