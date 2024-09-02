@@ -9,7 +9,7 @@ import (
 func LoadVersion() {
 	figure.NewFigure("MrAndreID", "standard", true).Print()
 
-	fmt.Println("====================================================================== v1.0.5")
+	fmt.Println("====================================================================== v1.0.6")
 
 	fmt.Println()
 }
